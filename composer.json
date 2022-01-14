@@ -1,0 +1,19 @@
+{
+    "name": "xip-solid-foundation/pre-commit",
+    "description": "Package for pre-commit hook and basic testing",
+    "type": "library",
+    "license": "XIP SOLID FOUNDATION",
+    "authors": [
+        {
+            "name": "Muhammad Mustafa",
+            "email": "muhammad@xip-solid-foundation.nl",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "dama/doctrine-test-bundle": "^6.7",
+        "friendsofphp/php-cs-fixer": "^3.3",
+        "phpunit/phpunit": "^9.5",
+        "mockery/mockery": "^1.4"
+    }
+}
