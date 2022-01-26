@@ -1,7 +1,7 @@
 {
     "name": "xip-solid-foundation/pre-commit",
     "description": "Package for pre-commit hook and basic testing",
-    "type": "library",
+    "type": "symfony-bundle",
     "license": "Apache-2.0",
     "authors": [
         {
