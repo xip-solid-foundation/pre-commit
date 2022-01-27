@@ -14,7 +14,8 @@
         "dama/doctrine-test-bundle": "^6.7",
         "friendsofphp/php-cs-fixer": "^3.3",
         "phpunit/phpunit": "^9.5",
-        "mockery/mockery": "^1.4"
+        "mockery/mockery": "^1.4",
+        "doctrine/orm": "^2.11"
     },
     "minimum-stability": "stable"
 }
