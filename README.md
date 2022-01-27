@@ -10,52 +10,93 @@ A pre-commit hook installer with basic testing
 
 You may use [Symfony-Docker](https://github.com/dunglas/symfony-docker) to download and install Docker for Symfony.
 
-## Getting Started
+Installation
+=
 
-### Grant composer Access to the Private Repository
-In your GitHub account, click your account icon in the top-right corner, select Settings and Developer Settings. Then select Personal Access Tokens.
-
-Generate a new access token with Full control of private repositories privileges. Copy the access token value, switch to the terminal of your local computer, and execute the following command:
-
-```
-composer config --global --auth github-oauth.github.com [token]
-```
-Replace [token] with the value of your GitHub personal access token.
-
-### Configure Your Project's composer.json File
-
-Add the following to your project's composer.json file:
+Applications that use Symfony Flex Installation
+-
 
 ```
-{
-    "extra": {
-        "symfony": {
-            "endpoint": [
-                "https://api.github.com/repos/xip-solid-foundation/pre-commit-recipe/contents/index.json",
-                "flex://defaults"
-            ]
-        }
-    }
-}
+$ composer require xip-solid-foundation/pre-commit
 ```
 
+Applications that don't use Symfony Flex
+-
+### Step 1: Install the Bundle
 
-## Installation
+Open a command console, enter your project directory and execute the
+following command to install the latest stable version of this bundle:
 
-```
-composer require xip-solid-foundation/pre-commit
-```
-
-## Install the Recipes in Your Project
-
-If your private bundles/packages have not yet been installed in your project, run the following command:
-
-```
-composer update
+```console
+$ composer require xip-solid-foundation/pre-commit
 ```
 
-If the private bundles/packages have already been installed and you just want to install the new private recipes, run the following command:
+### Step 2: Added Pre-commit file
+
+
+Example:
+```#!/usr/bin/env bash
+# Automatic usage by installing symbolic link:
+# ln -sf ../../bin/pre-commit .git/hooks/pre-commit
+
+# Enable TTY, so fastest runs on a single line and looks cooler
+exec < /dev/tty
+
+if [[ -z `docker ps -q --no-trunc | grep $(docker-compose ps -q apache2)` ]]; then
+    echo -e "\e[41m COMMIT FAILED: Docker-compose is not running! \e[0m";
+    exit 1
+fi
+
+# Install phpunit synchronously to avoid problems.
+docker-compose exec php bin/phpunit install
+
+docker-compose exec -T php bin/console cache:warmup --env=prod
+if [[ $? != "0" ]]
+then
+    echo -e "\e[41m COMMIT FAILED: Cannot warm cache for env=prod! \e[0m":
+    exit 1
+fi
+
+# see which files you wanted to commit, fix code style and re-add
+FILES=` git status --porcelain | grep -e '^[AM]\(.*\).php$' | cut -c 3- | tr '\n' ' '`
+if [[ $FILES ]]
+then
+    FILES_NO_APPLICATION=`echo ${FILES} | sed "s/api\///g"`
+    docker-compose exec -T php vendor/bin/php-cs-fixer fix
+    git add ${FILES}
+fi
+
+# remove outdated code coverage files
+rm -rf var/coverage.txt public/test.html
+
+# warmup test cache to speed up tests
+docker-compose exec php bin/console cache:warmup --env=test
+
+# Run Tests and generate code coverage
+docker-compose exec php bash -c "XDEBUG_MODE=coverage vendor/bin/paratest --coverage-html=public/test.html --coverage-text=var/coverage.txt tests"
+if [[ $? != "0" ]]
+then
+    echo -e "\e[41m COMMIT FAILED: You have test errors! \e[0m":
+    exit 1
+fi
+
+# merge code coverage
+echo "Full HTML coverage at http://0.0.0.0/test.html/index.html"
+
+OK=`docker-compose exec -T php head -n10 var/coverage.txt | grep Lines | grep "100.00%"`
+if [[ ${OK} = "" ]]
+then
+    echo -e "\e[41m COMMIT FAILED: Code coverage not 100%! \e[0m":
+    exit 1
+fi
+
+echo ""
+```
+
+Usage
+=
+Now you can run the pre-commit by using 
 
 ```
-composer recipes
+$ bin/pre-commit
 ```
